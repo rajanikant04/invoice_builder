@@ -613,7 +613,7 @@ const sendEmail = () => {
             <select
               className="w-full border border-gray-300 rounded p-1 pl-8 text-sm appearance-none"
               value={currency}
-              onChange={(e) => handleCurrencyChange(e.target.value)}
+              onChange={(e) => handleCurrencyChange(e.target.value as CurrencyType)}
             >
               <option value="INR">INR (₹)</option>
               <option value="USD">USD ($)</option>
