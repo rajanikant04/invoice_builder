@@ -1,6 +1,7 @@
 "use client"
 import { useState, useRef } from 'react';
-import { Plus, Trash2, FileText, Mail, Download, Camera } from 'lucide-react';
+import { Plus, Trash2, Mail, Download, Camera } from 'lucide-react';
+import Image from 'next/image';
 
 const InvoiceGenerator = () => {
   const [activeTab, setActiveTab] = useState('editor');
@@ -222,7 +223,7 @@ const InvoiceGenerator = () => {
               onClick={triggerFileInput}
             >
               {logo ? (
-                <img src={logo} alt="Logo" className="max-w-full max-h-full object-contain" />
+                <Image src={logo} alt="Logo" className="max-w-full max-h-full object-contain" />
               ) : (
                 <div className="flex flex-col items-center text-gray-500">
                   <Camera size={16} />
