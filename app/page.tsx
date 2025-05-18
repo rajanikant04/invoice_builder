@@ -5,9 +5,9 @@ import Image from 'next/image';
 
 const InvoiceGenerator = () => {
   const [activeTab, setActiveTab] = useState('editor');
-  const [invoiceTitle, setInvoiceTitle] = useState('Invoice');
-  const [logo, setLogo] = useState(null);
-  const invoiceRef = useRef(null);
+  const [invoiceTitle, setInvoiceTitle] = useState<string>('Invoice');
+  const [logo, setLogo] = useState<string | null>(null);
+  const invoiceRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef(null);
   
   // Sender details
@@ -111,15 +111,19 @@ const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
   if (file) {
     const reader = new FileReader();
-    reader.onload = (e) => {
-      setLogo(e.target?.result as string);
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setLogo(reader.result);
+      }
     };
     reader.readAsDataURL(file);
   }
 };
 
 const triggerFileInput = () => {
-  fileInputRef.current?.click();
+  if (fileInputRef.current) {
+    (fileInputRef.current as HTMLInputElement).click();
+  }
 };
 
 const handleCurrencyChange = (value: CurrencyType) => {
@@ -160,11 +164,12 @@ const generatePDF = () => {
     return;
   }
 
-  printWindow.document.write('<html><head><title>' + invoiceTitle + '</title>');
+  // Ensure TypeScript recognizes printWindow.document
+  printWindow.document.open();
+  printWindow.document.write('<html><head><title>' + (invoiceTitle || 'Invoice') + '</title>');
   printWindow.document.write('</head><body>');
   printWindow.document.write(printContent.innerHTML);
   printWindow.document.write('</body></html>');
-
   printWindow.document.close();
   printWindow.focus();
 
@@ -173,6 +178,7 @@ const generatePDF = () => {
     printWindow.close();
   }, 250);
 };
+
 
 const sendEmail = () => {
   if (!recipientDetails.email) {
