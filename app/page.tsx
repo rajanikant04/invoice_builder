@@ -47,9 +47,9 @@ const InvoiceGenerator = () => {
   
   // Tax, discount, and currency
   const [taxType, setTaxType] = useState('Fixed');
-  const [taxValue, setTaxValue] = useState(100);
+  const [taxValue, setTaxValue] = useState(10);
   const [discountType, setDiscountType] = useState('Fixed');
-  const [discountValue, setDiscountValue] = useState(50);
+  const [discountValue, setDiscountValue] = useState(5);
   const [currency, setCurrency] = useState('INR');
   const [currencySymbol, setCurrencySymbol] = useState('₹');
   
