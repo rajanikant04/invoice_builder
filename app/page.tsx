@@ -32,7 +32,7 @@ const InvoiceGenerator = () => {
   // Invoice details
   const [invoiceDetails, setInvoiceDetails] = useState({
     number: '',
-    date: formatDate(new Date()),
+    date: new Date().toLocaleDateString(),
     terms: '30 days net',
     notes: '',
   });
@@ -68,12 +68,7 @@ const InvoiceGenerator = () => {
   const total = subtotal + taxAmount - discountAmount;
   const balance = total;
 
-  function formatDate(date:any) {
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${month}/${day}/${year}`;
-  }
+  
 
   const handleSenderChange = (field, value) => {
     setSenderDetails({ ...senderDetails, [field]: value });
