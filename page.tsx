@@ -1,13 +1,20 @@
 "use client"
-import { useState, useRef } from 'react';
-import { Plus, Trash2, FileText, Mail, Download, Camera } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Plus, Trash2, FileText, Mail, Download, Camera, Check, X, Heading1 } from 'lucide-react';
 
 const InvoiceGenerator = () => {
   const [activeTab, setActiveTab] = useState('editor');
   const [invoiceTitle, setInvoiceTitle] = useState('Invoice');
   const [logo, setLogo] = useState(null);
+  const [signature, setSignature] = useState(null);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
   const invoiceRef = useRef(null);
   const fileInputRef = useRef(null);
+  const signatureInputRef = useRef(null);
+  
+  // Default signature - a simple base64 encoded signature SVG
+  const defaultSignature = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iNTAiPjxwYXRoIGQ9Ik0xMCw0MCBDMzAsMTAgNTAsMTAgNzAsNDAgQzgwLDYwIDEwMCwxMCAxMjAsNDAgQzE0MCwxMCAxNjAsMTAgMTgwLDQwIiBzdHJva2U9IiMwMDY2RkYiIHN0cm9rZS13aWR0aD0iMiIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PC9zdmc+";
   
   // Sender details
   const [senderDetails, setSenderDetails] = useState({
@@ -41,8 +48,8 @@ const InvoiceGenerator = () => {
     { id: 1, description: '', qty: 1, rate: 0 }
   ]);
 
-  
-  
+  // Color theme
+  const [selectedColor, setSelectedColor] = useState('#3366FF');
   
   // Tax, discount, and currency
   const [taxType, setTaxType] = useState('Fixed');
@@ -55,6 +62,21 @@ const InvoiceGenerator = () => {
   // Reviews
   const [reviewsEnabled, setReviewsEnabled] = useState(false);
   const [reviewWebsite, setReviewWebsite] = useState('');
+
+  // Set default signature when component mounts
+  useEffect(() => {
+    setSignature(defaultSignature);
+  }, []);
+
+  // Auto-hide toast after 3 seconds
+  useEffect(() => {
+    if (showToast) {
+      const timer = setTimeout(() => {
+        setShowToast(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showToast]);
 
   // Calculate totals
   const subtotal = items.reduce((sum, item) => sum + (item.rate * item.qty), 0);
@@ -101,6 +123,10 @@ const InvoiceGenerator = () => {
     setItems(items.filter(item => item.id !== id));
   };
 
+  const colorOptions = [
+    '#1E90FF', '#000000', '#333333', '#555555', '#FF0000', '#CC0000', '#990099',
+    '#0000FF', '#3366FF', '#00AAFF', '#00CC00', '#669900', '#FFCC00', '#FF6600'
+  ];
 
   const handleLogoUpload = (e) => {
     const file = e.target.files[0];
@@ -113,8 +139,23 @@ const InvoiceGenerator = () => {
     }
   };
 
+  const handleSignatureUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setSignature(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const triggerFileInput = () => {
     fileInputRef.current.click();
+  };
+
+  const triggerSignatureInput = () => {
+    signatureInputRef.current.click();
   };
 
   const handleCurrencyChange = (value) => {
@@ -132,6 +173,11 @@ const InvoiceGenerator = () => {
       default:
         setCurrencySymbol('₹');
     }
+  };
+
+  const showToastNotification = (message) => {
+    setToastMessage(message);
+    setShowToast(true);
   };
 
   const generatePDF = () => {
@@ -176,7 +222,7 @@ const InvoiceGenerator = () => {
 
   const sendEmail = () => {
     if (!recipientDetails.email) {
-      alert('Please add recipient email address');
+      showToastNotification('Please add recipient email address');
       return;
     }
     
@@ -184,10 +230,24 @@ const InvoiceGenerator = () => {
     const body = encodeURIComponent(`Dear ${recipientDetails.name},\n\nPlease find attached invoice ${invoiceDetails.number} for your review.\n\nTotal Amount: ${currencySymbol}${balance.toFixed(2)}\nDue Date: Based on terms: ${invoiceDetails.terms}\n\nThank you for your business.\n\nRegards,\n${senderDetails.name}`);
     
     window.location.href = `mailto:${recipientDetails.email}?subject=${subject}&body=${body}`;
+    showToastNotification('Email client opened with invoice details');
   };
 
   return (
     <div className="flex flex-col md:flex-row gap-4 p-4 bg-gray-100 min-h-screen">
+      {/* Toast Notification */}
+      {showToast && (
+        <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-md shadow-lg">
+          <div className="p-1 bg-blue-400 rounded-full">
+            <Mail size={16} />
+          </div>
+          <span>{toastMessage}</span>
+          <button onClick={() => setShowToast(false)} className="ml-2 p-1 hover:bg-blue-600 rounded-full">
+            <X size={16} />
+          </button>
+        </div>
+      )}
+      
       <div className="w-full md:w-3/4 bg-white rounded-lg shadow-md">
         {/* Tabs */}
         <div className="flex border-b">
@@ -211,12 +271,7 @@ const InvoiceGenerator = () => {
         <div className="p-6" ref={invoiceRef}>
           {/* Invoice Title */}
           <div className="flex justify-between mb-8">
-            <input
-              type="text"
-              className="text-2xl font-bold border border-gray-300 rounded px-3 py-1 w-48"
-              value={invoiceTitle}
-              onChange={(e) => setInvoiceTitle(e.target.value)}
-            />
+            <h1>Invoice</h1>
             <div 
               className="border border-gray-300 rounded w-32 h-16 flex items-center justify-center overflow-hidden cursor-pointer"
               onClick={triggerFileInput}
@@ -519,12 +574,40 @@ const InvoiceGenerator = () => {
           </div>
 
           {/* Signature */}
-          <div className="mt-4">
+          <div className="mt-6">
             <h3 className="text-sm font-medium text-blue-500 mb-2">Signature</h3>
             <div className="flex items-center">
-              <button className="text-blue-500">
-                <Plus size={16} />
-              </button>
+              <div 
+                className="border border-gray-300 rounded w-64 h-20 flex items-center justify-center overflow-hidden cursor-pointer"
+                onClick={triggerSignatureInput}
+              >
+                {signature ? (
+                  <img src={signature} alt="Signature" className="max-w-full max-h-full object-contain" />
+                ) : (
+                  <div className="flex flex-col items-center text-gray-500">
+                    <Plus size={16} />
+                    <span className="text-xs mt-1">+ Add Signature</span>
+                  </div>
+                )}
+                <input 
+                  ref={signatureInputRef}
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden" 
+                  onChange={handleSignatureUpload}
+                />
+              </div>
+              <div className="ml-2">
+                <button 
+                  onClick={() => setSignature(defaultSignature)} 
+                  className="text-xs text-blue-500 hover:underline"
+                >
+                  Use default signature
+                </button>
+              </div>
+            </div>
+            <div className="mt-2">
+              <p className="text-xs text-gray-500">{senderDetails.name}</p>
             </div>
           </div>
         </div>
@@ -555,7 +638,17 @@ const InvoiceGenerator = () => {
           />
           <p className="text-xs text-gray-500 mb-4">Grow your business by collecting rating and reviews</p>
 
-          
+          <h2 className="font-medium text-sm mb-2">COLOR</h2>
+          <div className="grid grid-cols-7 gap-1 mb-4">
+            {colorOptions.map((color) => (
+              <button
+                key={color}
+                className={`w-6 h-6 rounded-full border border-gray-300 ${selectedColor === color ? 'ring-2 ring-offset-2 ring-blue-500' : ''}`}
+                style={{ backgroundColor: color }}
+                onClick={() => setSelectedColor(color)}
+              />
+            ))}
+          </div>
 
           <h2 className="font-medium text-sm mb-2">TAX</h2>
           <div className="flex gap-2 mb-4">
@@ -620,5 +713,3 @@ const InvoiceGenerator = () => {
     </div>
   );
 };
-
-export default InvoiceGenerator;
