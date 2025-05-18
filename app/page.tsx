@@ -70,117 +70,122 @@ const InvoiceGenerator = () => {
 
   
 
-  const handleSenderChange = (field, value) => {
-    setSenderDetails({ ...senderDetails, [field]: value });
-  };
+  // Type definitions
+type SenderField = keyof typeof senderDetails;
+type RecipientField = keyof typeof recipientDetails;
+type InvoiceField = keyof typeof invoiceDetails;
+type ItemField = 'description' | 'qty' | 'rate';
+type CurrencyType = 'USD' | 'EUR' | 'GBP' | 'INR';
 
-  const handleRecipientChange = (field, value) => {
-    setRecipientDetails({ ...recipientDetails, [field]: value });
-  };
+// Handlers with types
+const handleSenderChange = (field: SenderField, value: string) => {
+  setSenderDetails({ ...senderDetails, [field]: value });
+};
 
-  const handleInvoiceDetailsChange = (field, value) => {
-    setInvoiceDetails({ ...invoiceDetails, [field]: value });
-  };
+const handleRecipientChange = (field: RecipientField, value: string) => {
+  setRecipientDetails({ ...recipientDetails, [field]: value });
+};
 
-  const handleItemChange = (id, field, value) => {
-    setItems(items.map(item => 
-      item.id === id ? { ...item, [field]: field === 'qty' || field === 'rate' ? parseFloat(value) || 0 : value } : item
-    ));
-  };
+const handleInvoiceDetailsChange = (field: InvoiceField, value: string) => {
+  setInvoiceDetails({ ...invoiceDetails, [field]: value });
+};
 
-  const addItem = () => {
-    const newId = items.length > 0 ? Math.max(...items.map(item => item.id)) + 1 : 1;
-    setItems([...items, { id: newId, description: '', qty: 1, rate: 0 }]);
-  };
+const handleItemChange = (id: number, field: ItemField, value: string | number) => {
+  setItems(items.map(item => 
+    item.id === id 
+      ? { ...item, [field]: field === 'qty' || field === 'rate' ? parseFloat(value as string) || 0 : value } 
+      : item
+  ));
+};
 
-  const removeItem = (id) => {
-    setItems(items.filter(item => item.id !== id));
-  };
+const addItem = () => {
+  const newId = items.length > 0 ? Math.max(...items.map(item => item.id)) + 1 : 1;
+  setItems([...items, { id: newId, description: '', qty: 1, rate: 0 }]);
+};
 
+const removeItem = (id: number) => {
+  setItems(items.filter(item => item.id !== id));
+};
 
-  const handleLogoUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setLogo(e.target.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setLogo(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  }
+};
 
-  const triggerFileInput = () => {
-    fileInputRef.current.click();
-  };
+const triggerFileInput = () => {
+  fileInputRef.current?.click();
+};
 
-  const handleCurrencyChange = (value) => {
-    setCurrency(value);
-    switch (value) {
-      case 'USD':
-        setCurrencySymbol('$');
-        break;
-      case 'EUR':
-        setCurrencySymbol('€');
-        break;
-      case 'GBP':
-        setCurrencySymbol('£');
-        break;
-      default:
-        setCurrencySymbol('₹');
-    }
-  };
+const handleCurrencyChange = (value: CurrencyType) => {
+  setCurrency(value);
+  switch (value) {
+    case 'USD':
+      setCurrencySymbol('$');
+      break;
+    case 'EUR':
+      setCurrencySymbol('€');
+      break;
+    case 'GBP':
+      setCurrencySymbol('£');
+      break;
+    default:
+      setCurrencySymbol('₹');
+  }
+};
 
-  const generatePDF = () => {
-    // Since we can't use PDF libraries, we'll open a print dialog instead
-    // that allows saving as PDF
-    if (!invoiceRef.current) return;
-    
-    const printContent = document.createElement('div');
-    printContent.innerHTML = invoiceRef.current.innerHTML;
-    
-    // Apply some basic styles for printing
-    const style = document.createElement('style');
-    style.textContent = `
-      body { font-family: Arial, sans-serif; padding: 20px; }
-      input, select, button { border: none; background: none; font-size: inherit; }
-      textarea { border: none; background: none; font-size: inherit; }
-      .print-only { display: block !important; }
-    `;
-    printContent.prepend(style);
-    
-    // Create a new window for printing
-    const printWindow = window.open('', '', 'height=600,width=800');
-    if (!printWindow) {
-      alert("Please allow popups to print/save as PDF");
-      return;
-    }
-    
-    printWindow.document.write('<html><head><title>' + invoiceTitle + '</title>');
-    printWindow.document.write('</head><body>');
-    printWindow.document.write(printContent.innerHTML);
-    printWindow.document.write('</body></html>');
-    
-    printWindow.document.close();
-    printWindow.focus();
-    
-    // Give a moment for content to load before printing
-    setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
-    }, 250);
-  };
+const generatePDF = () => {
+  if (!invoiceRef.current) return;
 
-  const sendEmail = () => {
-    if (!recipientDetails.email) {
-      alert('Please add recipient email address');
-      return;
-    }
-    
-    const subject = encodeURIComponent(`${invoiceTitle} ${invoiceDetails.number}`);
-    const body = encodeURIComponent(`Dear ${recipientDetails.name},\n\nPlease find attached invoice ${invoiceDetails.number} for your review.\n\nTotal Amount: ${currencySymbol}${balance.toFixed(2)}\nDue Date: Based on terms: ${invoiceDetails.terms}\n\nThank you for your business.\n\nRegards,\n${senderDetails.name}`);
-    
-    window.location.href = `mailto:${recipientDetails.email}?subject=${subject}&body=${body}`;
-  };
+  const printContent = document.createElement('div');
+  printContent.innerHTML = invoiceRef.current.innerHTML;
+
+  const style = document.createElement('style');
+  style.textContent = `
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    input, select, button { border: none; background: none; font-size: inherit; }
+    textarea { border: none; background: none; font-size: inherit; }
+    .print-only { display: block !important; }
+  `;
+  printContent.prepend(style);
+
+  const printWindow = window.open('', '', 'height=600,width=800');
+  if (!printWindow) {
+    alert("Please allow popups to print/save as PDF");
+    return;
+  }
+
+  printWindow.document.write('<html><head><title>' + invoiceTitle + '</title>');
+  printWindow.document.write('</head><body>');
+  printWindow.document.write(printContent.innerHTML);
+  printWindow.document.write('</body></html>');
+
+  printWindow.document.close();
+  printWindow.focus();
+
+  setTimeout(() => {
+    printWindow.print();
+    printWindow.close();
+  }, 250);
+};
+
+const sendEmail = () => {
+  if (!recipientDetails.email) {
+    alert('Please add recipient email address');
+    return;
+  }
+
+  const subject = encodeURIComponent(`${invoiceTitle} ${invoiceDetails.number}`);
+  const body = encodeURIComponent(`Dear ${recipientDetails.name},\n\nPlease find attached invoice ${invoiceDetails.number} for your review.\n\nTotal Amount: ${currencySymbol}${balance.toFixed(2)}\nDue Date: Based on terms: ${invoiceDetails.terms}\n\nThank you for your business.\n\nRegards,\n${senderDetails.name}`);
+
+  window.location.href = `mailto:${recipientDetails.email}?subject=${subject}&body=${body}`;
+};
+
 
   return (
     <div className="flex flex-col md:flex-row gap-4 p-4 bg-gray-100 min-h-screen">
